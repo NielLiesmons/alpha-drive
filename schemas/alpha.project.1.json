@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://alpha.local/schemas/alpha.project/1",
+  "title": "alpha.project/1",
+  "description": "Project entity — not a folder. Links to Drive path prefixes and optional mail/site.",
+  "type": "object",
+  "required": ["schema", "id", "slug", "title", "created_at"],
+  "properties": {
+    "schema": { "const": "alpha.project/1" },
+    "id": { "type": "string", "minLength": 1 },
+    "slug": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+    "title": { "type": "string", "minLength": 1 },
+    "description": { "type": "string" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "drive": {
+      "type": "object",
+      "description": "Path prefixes inside the Space Drive this Project uses",
+      "properties": {
+        "private_prefix": { "type": "string" },
+        "public_prefix": { "type": "string" }
+      }
+    },
+    "mail_list_id": { "type": ["string", "null"] },
+    "site_url": { "type": ["string", "null"] }
+  },
+  "additionalProperties": false
+}
