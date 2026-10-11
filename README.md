@@ -1,55 +1,70 @@
 # Alpha Drive
 
-Peergos-shaped encrypted Drive: **server stores ciphertext only**; **root capability stays on devices**.
+Peergos-shaped encrypted Drive: **server stores ciphertext only**; **family root capability stays on devices**.
 
-Open-ended toward full cryptree (per-directory wrapped keys). v0 uses one/few client-held root caps for speed.
+v0 = **one family key** on every device (fine for full household access). Fine-grained cryptree caps later.
 
 ## Status
 
-Working local MVP:
-
 - Content-addressed **ciphertext** block store (`PUT/GET /v1/blocks/{sha256}`)
-- Encrypted **tip** pointer (`GET/PUT /v1/tip`) → encrypted `alpha.dir/1` index
-- CLI: `keygen`, `serve`, `put`, `get`
+- Encrypted **tip** → encrypted `alpha.dir/1` index
+- CLI: `keygen`, `serve`, `init`, `ls`, `put`, `get`, `project`, `task`
 - Schemas: `schemas/alpha.project.1.json`, `alpha.task.1.json`, `alpha.dir.1.json`
+- Live: `https://drive.bley.farm/health` → `ok` (data on Storage Box)
 
-## Threat model
+## Keys (v0 family)
 
-| On server | On devices |
-|-----------|------------|
-| Opaque blocks + tip hash | Root capability (hex key) |
-| Bearer token (authn only) | Encrypt before upload / decrypt after download |
+| Item | Who holds it | Purpose |
+|------|----------------|---------|
+| **Family root capability** | Phones / laptops + offline recovery kit | Encrypt / decrypt everything |
+| **API bearer token** | Apps + server env | Authn to store/fetch ciphertext — **not** crypto |
 
-Losing all devices **and** the recovery copy of the root key = data loss.
+Same root key on Niel’s and partner’s devices = full access for both. Revoke later via cryptree shares; for now, rotate the family key only if you must.
 
-## Quick start
+```bash
+cargo run -- keygen   # print once → password manager + recovery paper
+export ALPHA_DRIVE_ROOT_KEY=…   # devices only
+export ALPHA_DRIVE_TOKEN=…      # also in /etc/alpha-drive/env on the VPS
+```
+
+## Tree layout
+
+Logical paths (names inside the encrypted root dir):
+
+```
+meta/space.json
+projects/{id}/project.json     # alpha.project/1
+tasks/{id}/task.json           # alpha.task/1  (links project_id)
+files/…                        # arbitrary blobs
+```
+
+Projects are **entities**, not folders. Drive prefixes on the Project record point at where that Project’s files live.
+
+## Quick start (local)
 
 ```bash
 cd alpha-drive
 cargo build
 
-# 1) Root capability — keep offline / on phones & laptops only
-cargo run -- keygen   # → print hex; export ALPHA_DRIVE_ROOT_KEY=...
-
-# 2) API token — not crypto; only gates who may store/fetch blocks
+export ALPHA_DRIVE_ROOT_KEY="$(cargo run --quiet -- keygen)"
 export ALPHA_DRIVE_TOKEN=dev-token
 
-# 3) Authority (no root key here)
-cargo run -- serve --data ./data --token "$ALPHA_DRIVE_TOKEN"
+cargo run -- serve --data ./data --token "$ALPHA_DRIVE_TOKEN" &
 
-# 4) Client (other terminal)
-echo 'CSA opens Monday' > /tmp/note.txt
-cargo run -- put --token "$ALPHA_DRIVE_TOKEN" --root-key "$ALPHA_DRIVE_ROOT_KEY" \
-  files/note.txt /tmp/note.txt
-cargo run -- get --token "$ALPHA_DRIVE_TOKEN" --root-key "$ALPHA_DRIVE_ROOT_KEY" \
-  files/note.txt
+cargo run -- init --name "Bley Family"
+cargo run -- project create --title "Ferme de Bley" --slug ferme-de-bley
+# → prints JSON including id
+cargo run -- task create --project <id> --title "Order CSA boxes"
+cargo run -- ls
+cargo run -- project list
+cargo run -- task list --project <id>
 ```
 
-Put a Project record the same way (client encrypts JSON that matches `alpha.project/1`):
+Against production (root key still only on your laptop):
 
 ```bash
-# write project.json locally, then:
-cargo run -- put ... projects/<id>/project.json ./project.json --kind project
+export ALPHA_DRIVE_TOKEN=…   # from the VPS env — never commit
+cargo run -- project create --url https://drive.bley.farm --title "…"
 ```
 
 ## API (authority)
@@ -64,9 +79,17 @@ cargo run -- put ... projects/<id>/project.json ./project.json --kind project
 
 All `/v1/*` require `Authorization: Bearer <token>`.
 
+## Tests
+
+```bash
+cargo test
+```
+
+Includes Project/Task round-trip and “wrong root key cannot read.”
+
 ## Toward full cryptree
 
-- Dir entries already have optional `wrapped_key` (file key stored inside the **encrypted** dir node today).
-- Next: nested `alpha.dir` trees, wrap child keys to parent dir keys, public subtree read-cap, Milestone schema, Alpha Chat client.
+- Dir entries already carry `wrapped_key` (file key inside the encrypted dir node).
+- Next: nested `alpha.dir` trees, per-person subtree caps, encrypted music index + stream-on-play, Admin wiring.
 
 See `../alpha-docs/MVP-family-drive-projects-tasks.md`.

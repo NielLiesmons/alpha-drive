@@ -4,18 +4,28 @@ use serde_json::json;
 use crate::crypto::{decrypt, decrypt_with_key, encrypt, encrypt_with_root, parse_root_key};
 use crate::store::hash_hex;
 
-#[derive(Serialize, Deserialize, Clone)]
-struct DirChild {
-    hash: String,
-    kind: String,
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct DirChild {
+    pub hash: String,
+    pub kind: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    wrapped_key: Option<String>,
+    pub wrapped_key: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Default)]
-struct DirNode {
-    schema: String,
-    children: std::collections::BTreeMap<String, DirChild>,
+#[derive(Serialize, Deserialize, Default, Debug)]
+pub struct DirNode {
+    pub schema: String,
+    pub children: std::collections::BTreeMap<String, DirChild>,
+}
+
+/// List entries in the encrypted root directory.
+pub async fn list_dir(
+    base: &str,
+    token: &str,
+    root_key_hex: &str,
+) -> Result<DirNode, Box<dyn std::error::Error>> {
+    let root = parse_root_key(root_key_hex).map_err(|e| e.to_string())?;
+    load_root_dir(base, token, &root).await
 }
 
 pub async fn put_path(

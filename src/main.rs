@@ -1,13 +1,10 @@
-mod client;
-mod crypto;
-mod server;
-mod store;
-
 use std::net::SocketAddr;
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
 use tracing_subscriber::EnvFilter;
+
+use alpha_drive::{client, crypto, entities, server};
 
 #[derive(Parser, Debug)]
 #[command(name = "alpha-drive", about = "Encrypted Drive authority + client helpers")]
@@ -28,7 +25,7 @@ enum Cmd {
         #[arg(long, env = "ALPHA_DRIVE_TOKEN")]
         token: String,
     },
-    /// Generate a root capability (hex). Devices only — never the server.
+    /// Generate a family root capability (hex). Devices only — never the server.
     Keygen,
     /// Encrypt a local file and store it under a logical Drive path.
     Put {
@@ -56,6 +53,104 @@ enum Cmd {
         #[arg(long)]
         out: Option<PathBuf>,
     },
+    /// List encrypted root directory entries (paths + kinds).
+    Ls {
+        #[arg(long, default_value = "http://127.0.0.1:8787")]
+        url: String,
+        #[arg(long, env = "ALPHA_DRIVE_TOKEN")]
+        token: String,
+        #[arg(long, env = "ALPHA_DRIVE_ROOT_KEY")]
+        root_key: String,
+    },
+    /// Write `meta/space.json` for this family Drive.
+    Init {
+        #[arg(long, default_value = "http://127.0.0.1:8787")]
+        url: String,
+        #[arg(long, env = "ALPHA_DRIVE_TOKEN")]
+        token: String,
+        #[arg(long, env = "ALPHA_DRIVE_ROOT_KEY")]
+        root_key: String,
+        #[arg(long, default_value = "Family")]
+        name: String,
+    },
+    /// Project entity helpers (`alpha.project/1`).
+    Project {
+        #[command(subcommand)]
+        cmd: ProjectCmd,
+    },
+    /// Task entity helpers (`alpha.task/1`).
+    Task {
+        #[command(subcommand)]
+        cmd: TaskCmd,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+enum ProjectCmd {
+    Create {
+        #[arg(long, default_value = "http://127.0.0.1:8787")]
+        url: String,
+        #[arg(long, env = "ALPHA_DRIVE_TOKEN")]
+        token: String,
+        #[arg(long, env = "ALPHA_DRIVE_ROOT_KEY")]
+        root_key: String,
+        #[arg(long)]
+        title: String,
+        #[arg(long)]
+        slug: Option<String>,
+    },
+    Get {
+        #[arg(long, default_value = "http://127.0.0.1:8787")]
+        url: String,
+        #[arg(long, env = "ALPHA_DRIVE_TOKEN")]
+        token: String,
+        #[arg(long, env = "ALPHA_DRIVE_ROOT_KEY")]
+        root_key: String,
+        id: String,
+    },
+    List {
+        #[arg(long, default_value = "http://127.0.0.1:8787")]
+        url: String,
+        #[arg(long, env = "ALPHA_DRIVE_TOKEN")]
+        token: String,
+        #[arg(long, env = "ALPHA_DRIVE_ROOT_KEY")]
+        root_key: String,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+enum TaskCmd {
+    Create {
+        #[arg(long, default_value = "http://127.0.0.1:8787")]
+        url: String,
+        #[arg(long, env = "ALPHA_DRIVE_TOKEN")]
+        token: String,
+        #[arg(long, env = "ALPHA_DRIVE_ROOT_KEY")]
+        root_key: String,
+        #[arg(long)]
+        project: String,
+        #[arg(long)]
+        title: String,
+    },
+    Get {
+        #[arg(long, default_value = "http://127.0.0.1:8787")]
+        url: String,
+        #[arg(long, env = "ALPHA_DRIVE_TOKEN")]
+        token: String,
+        #[arg(long, env = "ALPHA_DRIVE_ROOT_KEY")]
+        root_key: String,
+        id: String,
+    },
+    List {
+        #[arg(long, default_value = "http://127.0.0.1:8787")]
+        url: String,
+        #[arg(long, env = "ALPHA_DRIVE_TOKEN")]
+        token: String,
+        #[arg(long, env = "ALPHA_DRIVE_ROOT_KEY")]
+        root_key: String,
+        #[arg(long)]
+        project: Option<String>,
+    },
 }
 
 #[tokio::main]
@@ -69,7 +164,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Cmd::Keygen => {
             let key = crypto::generate_root_key();
             println!("{}", hex::encode(key));
-            eprintln!("Store this root capability on devices only — never on the Drive server.");
+            eprintln!("Family root capability — store on devices only; never on the Drive server.");
+            eprintln!("v0: same key on every family device. Recovery kit offline.");
         }
         Cmd::Put {
             url,
@@ -98,6 +194,87 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 std::io::stdout().write_all(&plaintext)?;
             }
         }
+        Cmd::Ls {
+            url,
+            token,
+            root_key,
+        } => {
+            let dir = client::list_dir(&url, &token, &root_key).await?;
+            for (path, child) in dir.children {
+                println!("{}\t{}", child.kind, path);
+            }
+        }
+        Cmd::Init {
+            url,
+            token,
+            root_key,
+            name,
+        } => {
+            let doc = entities::init_space(&url, &token, &root_key, &name).await?;
+            println!("{}", serde_json::to_string_pretty(&doc)?);
+        }
+        Cmd::Project { cmd } => match cmd {
+            ProjectCmd::Create {
+                url,
+                token,
+                root_key,
+                title,
+                slug,
+            } => {
+                let p =
+                    entities::create_project(&url, &token, &root_key, &title, slug.as_deref())
+                        .await?;
+                println!("{}", serde_json::to_string_pretty(&p)?);
+            }
+            ProjectCmd::Get {
+                url,
+                token,
+                root_key,
+                id,
+            } => {
+                let p = entities::get_project(&url, &token, &root_key, &id).await?;
+                println!("{}", serde_json::to_string_pretty(&p)?);
+            }
+            ProjectCmd::List {
+                url,
+                token,
+                root_key,
+            } => {
+                let list = entities::list_projects(&url, &token, &root_key).await?;
+                println!("{}", serde_json::to_string_pretty(&list)?);
+            }
+        },
+        Cmd::Task { cmd } => match cmd {
+            TaskCmd::Create {
+                url,
+                token,
+                root_key,
+                project,
+                title,
+            } => {
+                let t = entities::create_task(&url, &token, &root_key, &project, &title).await?;
+                println!("{}", serde_json::to_string_pretty(&t)?);
+            }
+            TaskCmd::Get {
+                url,
+                token,
+                root_key,
+                id,
+            } => {
+                let t = entities::get_task(&url, &token, &root_key, &id).await?;
+                println!("{}", serde_json::to_string_pretty(&t)?);
+            }
+            TaskCmd::List {
+                url,
+                token,
+                root_key,
+                project,
+            } => {
+                let list =
+                    entities::list_tasks(&url, &token, &root_key, project.as_deref()).await?;
+                println!("{}", serde_json::to_string_pretty(&list)?);
+            }
+        },
     }
     Ok(())
 }

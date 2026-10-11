@@ -18,20 +18,24 @@ struct App {
     token: String,
 }
 
+/// Build the HTTP router (also used by integration tests).
+pub fn router(data: PathBuf, token: String) -> Result<Router, Box<dyn std::error::Error>> {
+    let store = Arc::new(BlobStore::open(data)?);
+    let app = App { store, token };
+    Ok(Router::new()
+        .route("/health", get(|| async { "ok" }))
+        .route("/v1/blocks/{hash}", get(get_block).put(put_block))
+        .route("/v1/tip", get(get_tip).put(put_tip))
+        .layer(CorsLayer::permissive())
+        .with_state(app))
+}
+
 pub async fn serve(
     listen: SocketAddr,
     data: PathBuf,
     token: String,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let store = Arc::new(BlobStore::open(data)?);
-    let app = App { store, token };
-    let router = Router::new()
-        .route("/health", get(|| async { "ok" }))
-        .route("/v1/blocks/{hash}", get(get_block).put(put_block))
-        .route("/v1/tip", get(get_tip).put(put_tip))
-        .layer(CorsLayer::permissive())
-        .with_state(app);
-
+    let router = router(data, token)?;
     tracing::info!("alpha-drive listening on http://{listen} (ciphertext only)");
     let listener = tokio::net::TcpListener::bind(listen).await?;
     axum::serve(listener, router).await?;
