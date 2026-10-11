@@ -16,7 +16,6 @@ async fn spawn_drive() -> (String, String, tempfile::TempDir) {
     tokio::spawn(async move {
         axum::serve(listener, router).await.expect("serve");
     });
-    // Tiny settle for accept loop
     tokio::time::sleep(Duration::from_millis(20)).await;
     (format!("http://{addr}"), token, dir)
 }
@@ -41,17 +40,36 @@ async fn project_and_task_round_trip() {
     .expect("create project");
     assert_eq!(project.schema, "alpha.project/1");
     assert_eq!(project.slug, "ferme-de-bley");
+    assert!(project
+        .drive
+        .as_ref()
+        .and_then(|d| d.home_prefix.as_ref())
+        .unwrap()
+        .ends_with("/home"));
+
+    let other = entities::create_project(&url, &token, &root, "Website", Some("website"))
+        .await
+        .expect("create project 2");
 
     let got = entities::get_project(&url, &token, &root, &project.id)
         .await
         .expect("get project");
     assert_eq!(got.title, "Ferme de Bley");
 
-    let task = entities::create_task(&url, &token, &root, &project.id, "Order CSA boxes")
-        .await
-        .expect("create task");
-    assert_eq!(task.project_id, project.id);
-    assert_eq!(task.status, "todo");
+    let task = entities::create_task(
+        &url,
+        &token,
+        &root,
+        &[project.id.clone(), other.id.clone()],
+        "Order CSA boxes",
+    )
+    .await
+    .expect("create task");
+    assert_eq!(task.schema, "alpha.task/2");
+    assert_eq!(task.project_ids.len(), 2);
+    assert!(task.links_project(&project.id));
+    assert!(task.links_project(&other.id));
+    assert_eq!(task.status, "open");
 
     let got_task = entities::get_task(&url, &token, &root, &task.id)
         .await
@@ -61,12 +79,17 @@ async fn project_and_task_round_trip() {
     let projects = entities::list_projects(&url, &token, &root)
         .await
         .expect("list projects");
-    assert_eq!(projects.len(), 1);
+    assert_eq!(projects.len(), 2);
 
     let tasks = entities::list_tasks(&url, &token, &root, Some(&project.id))
         .await
         .expect("list tasks");
     assert_eq!(tasks.len(), 1);
+
+    let tasks_other = entities::list_tasks(&url, &token, &root, Some(&other.id))
+        .await
+        .expect("list by other");
+    assert_eq!(tasks_other.len(), 1);
 }
 
 #[tokio::test]

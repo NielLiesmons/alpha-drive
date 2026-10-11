@@ -1,10 +1,11 @@
 //! Project / Task helpers — encrypted JSON leaves on conventional paths.
 //!
-//! Tree layout (v0, flat root dir names with `/` separators):
+//! Tree layout (see alpha-docs/DRIVE-LAYOUT.md):
 //! - `meta/space.json`
 //! - `projects/{id}/project.json`  (kind: project)
+//! - `projects/{id}/home/…`        (optional narrative folder)
 //! - `tasks/{id}/task.json`        (kind: task)
-//! - `files/…`                     (kind: blob)
+//! - `files/…` `media/…`           (blobs)
 
 use rand::RngCore;
 use serde::{Deserialize, Serialize};
@@ -33,6 +34,9 @@ pub struct Project {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ProjectDrive {
+    /// Narrative / “about this project” folder (not the only way files belong).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub home_prefix: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub private_prefix: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -43,11 +47,19 @@ pub struct ProjectDrive {
 pub struct Task {
     pub schema: String,
     pub id: String,
-    pub project_id: String,
+    #[serde(default)]
+    pub project_ids: Vec<String>,
+    /// Deprecated singular from alpha.task/1 — normalized into `project_ids` on read.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub project_id: Option<String>,
     pub title: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     pub status: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub priority: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub labels: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub milestone_id: Option<String>,
     pub created_at: String,
@@ -55,6 +67,33 @@ pub struct Task {
     pub updated_at: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub due_at: Option<String>,
+}
+
+impl Task {
+    pub fn normalize(&mut self) {
+        if self.project_ids.is_empty() {
+            if let Some(p) = self.project_id.take() {
+                self.project_ids.push(p);
+            }
+        } else {
+            self.project_id = None;
+        }
+        // Map legacy alpha.task/1 statuses → /2
+        self.status = match self.status.as_str() {
+            "todo" => "open".into(),
+            "doing" => "inProgress".into(),
+            "done" => "closed".into(),
+            "cancelled" => "canceled".into(),
+            other => other.to_string(),
+        };
+        if self.schema == "alpha.task/1" {
+            self.schema = "alpha.task/2".into();
+        }
+    }
+
+    pub fn links_project(&self, id: &str) -> bool {
+        self.project_ids.iter().any(|p| p == id)
+    }
 }
 
 pub fn new_id() -> String {
@@ -91,8 +130,6 @@ pub fn now_rfc3339() -> String {
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_secs())
         .unwrap_or(0);
-    // Format as …Z via days since epoch — keep it simple: unix timestamp string
-    // clients accept; prefer proper UTC date.
     let days = secs / 86400;
     let tod = secs % 86400;
     let (y, m, d) = civil_from_days(days as i64);
@@ -121,6 +158,10 @@ pub fn project_path(id: &str) -> String {
     format!("projects/{id}/project.json")
 }
 
+pub fn project_home_prefix(id: &str) -> String {
+    format!("projects/{id}/home")
+}
+
 pub fn task_path(id: &str) -> String {
     format!("tasks/{id}/task.json")
 }
@@ -135,6 +176,7 @@ pub async fn create_project(
     let id = new_id();
     let slug = slug.map(|s| s.to_string()).unwrap_or_else(|| slugify(title));
     let created = now_rfc3339();
+    let home = project_home_prefix(&id);
     let project = Project {
         schema: "alpha.project/1".into(),
         id: id.clone(),
@@ -144,8 +186,9 @@ pub async fn create_project(
         created_at: created.clone(),
         updated_at: Some(created),
         drive: Some(ProjectDrive {
-            private_prefix: Some(format!("projects/{id}/private")),
-            public_prefix: Some(format!("projects/{id}/public")),
+            home_prefix: Some(home.clone()),
+            private_prefix: Some(home),
+            public_prefix: None,
         }),
         mail_list_id: None,
         site_url: None,
@@ -192,20 +235,24 @@ pub async fn create_task(
     base: &str,
     token: &str,
     root_key: &str,
-    project_id: &str,
+    project_ids: &[String],
     title: &str,
 ) -> Result<Task, Box<dyn std::error::Error>> {
-    // Ensure project exists (and is decryptable with this key).
-    let _ = get_project(base, token, root_key, project_id).await?;
+    for pid in project_ids {
+        let _ = get_project(base, token, root_key, pid).await?;
+    }
     let id = new_id();
     let created = now_rfc3339();
     let task = Task {
-        schema: "alpha.task/1".into(),
+        schema: "alpha.task/2".into(),
         id: id.clone(),
-        project_id: project_id.to_string(),
+        project_ids: project_ids.to_vec(),
+        project_id: None,
         title: title.to_string(),
         description: None,
-        status: "todo".into(),
+        status: "open".into(),
+        priority: Some("none".into()),
+        labels: Vec::new(),
         milestone_id: None,
         created_at: created.clone(),
         updated_at: Some(created),
@@ -223,7 +270,24 @@ pub async fn get_task(
     id: &str,
 ) -> Result<Task, Box<dyn std::error::Error>> {
     let bytes = client::get_path(base, token, root_key, &task_path(id)).await?;
-    Ok(serde_json::from_slice(&bytes)?)
+    let mut task: Task = serde_json::from_slice(&bytes)?;
+    task.normalize();
+    Ok(task)
+}
+
+pub async fn put_task(
+    base: &str,
+    token: &str,
+    root_key: &str,
+    task: &Task,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let mut t = task.clone();
+    t.normalize();
+    t.schema = "alpha.task/2".into();
+    t.updated_at = Some(now_rfc3339());
+    let body = serde_json::to_vec_pretty(&t)?;
+    client::put_path(base, token, root_key, &task_path(&t.id), "task", &body).await?;
+    Ok(())
 }
 
 pub async fn list_tasks(
@@ -238,8 +302,9 @@ pub async fn list_tasks(
         if child.kind == "task" || path.ends_with("/task.json") {
             match client::get_path(base, token, root_key, &path).await {
                 Ok(bytes) => {
-                    if let Ok(t) = serde_json::from_slice::<Task>(&bytes) {
-                        if project_id.map(|p| p == t.project_id).unwrap_or(true) {
+                    if let Ok(mut t) = serde_json::from_slice::<Task>(&bytes) {
+                        t.normalize();
+                        if project_id.map(|p| t.links_project(p)).unwrap_or(true) {
                             out.push(t);
                         }
                     }

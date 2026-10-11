@@ -9,7 +9,7 @@ v0 = **one family key** on every device (fine for full household access). Fine-g
 - Content-addressed **ciphertext** block store (`PUT/GET /v1/blocks/{sha256}`)
 - Encrypted **tip** → encrypted `alpha.dir/1` index
 - CLI: `keygen`, `serve`, `init`, `ls`, `put`, `get`, `project`, `task`
-- Schemas: `schemas/alpha.project.1.json`, `alpha.task.1.json`, `alpha.dir.1.json`
+- Schemas: `schemas/alpha.project.1.json`, `alpha.task.2.json` (+ `/1` legacy), `alpha.dir.1.json`
 - Live: `https://drive.bley.farm/health` → `ok` (data on Storage Box)
 
 ## Keys (v0 family)
@@ -34,11 +34,12 @@ Logical paths (names inside the encrypted root dir):
 ```
 meta/space.json
 projects/{id}/project.json     # alpha.project/1
-tasks/{id}/task.json           # alpha.task/1  (links project_id)
-files/…                        # arbitrary blobs
+projects/{id}/home/…           # optional narrative folder
+tasks/{id}/task.json           # alpha.task/2  (project_ids[])
+files/…  media/…               # content-type blobs (+ labels later)
 ```
 
-Projects are **entities**, not folders. Drive prefixes on the Project record point at where that Project’s files live.
+Projects are **entities + labels**, not exclusive folders. A file can carry many `project_ids`; `home/` is just the project’s description folder. See `../alpha-docs/DRIVE-LAYOUT.md`.
 
 ## Quick start (local)
 
@@ -54,7 +55,7 @@ cargo run -- serve --data ./data --token "$ALPHA_DRIVE_TOKEN" &
 cargo run -- init --name "Bley Family"
 cargo run -- project create --title "Ferme de Bley" --slug ferme-de-bley
 # → prints JSON including id
-cargo run -- task create --project <id> --title "Order CSA boxes"
+cargo run -- task create --project <id> --project <other-id> --title "Order CSA boxes"
 cargo run -- ls
 cargo run -- project list
 cargo run -- task list --project <id>

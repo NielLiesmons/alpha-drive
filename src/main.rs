@@ -78,7 +78,7 @@ enum Cmd {
         #[command(subcommand)]
         cmd: ProjectCmd,
     },
-    /// Task entity helpers (`alpha.task/1`).
+    /// Task entity helpers (`alpha.task/2`).
     Task {
         #[command(subcommand)]
         cmd: TaskCmd,
@@ -127,8 +127,9 @@ enum TaskCmd {
         token: String,
         #[arg(long, env = "ALPHA_DRIVE_ROOT_KEY")]
         root_key: String,
-        #[arg(long)]
-        project: String,
+        /// Project id to label this task with (repeatable).
+        #[arg(long = "project")]
+        projects: Vec<String>,
         #[arg(long)]
         title: String,
     },
@@ -249,10 +250,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 url,
                 token,
                 root_key,
-                project,
+                projects,
                 title,
             } => {
-                let t = entities::create_task(&url, &token, &root_key, &project, &title).await?;
+                let t =
+                    entities::create_task(&url, &token, &root_key, &projects, &title).await?;
                 println!("{}", serde_json::to_string_pretty(&t)?);
             }
             TaskCmd::Get {
