@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://alpha.local/schemas/alpha.chat_message/1",
+  "title": "alpha.chat_message/1",
+  "description": "Private family chat / comment leaf. Drive is SoT; Chatmail may carry a notify envelope separately.",
+  "type": "object",
+  "required": ["schema", "id", "kind", "author", "body", "created_at"],
+  "properties": {
+    "schema": { "const": "alpha.chat_message/1" },
+    "id": { "type": "string", "minLength": 1 },
+    "kind": {
+      "type": "string",
+      "enum": ["comment", "reaction", "chat"]
+    },
+    "author": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Mailbox email of the member (not chatmail relay addr)"
+    },
+    "body": { "type": "string" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "ref": {
+      "type": "object",
+      "required": ["type", "id"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["task", "note", "project", "enterprise", "chat"]
+        },
+        "id": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "reaction": {
+      "type": "string",
+      "description": "When kind=reaction: emoji or short code"
+    }
+  },
+  "additionalProperties": false
+}

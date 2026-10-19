@@ -35,7 +35,9 @@
               "activity",
               "cost_item",
               "sales_line",
-              "enterprise"
+              "enterprise",
+              "chat_message",
+              "chat_feed"
             ]
           },
           "wrapped_key": {
