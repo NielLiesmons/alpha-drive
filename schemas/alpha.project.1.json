@@ -11,6 +11,30 @@
     "slug": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
     "title": { "type": "string", "minLength": 1 },
     "description": { "type": "string" },
+    "body": { "type": "string" },
+    "status": {
+      "type": "string",
+      "enum": ["backlog", "planned", "inProgress", "closed", "canceled"],
+      "description": "Optional persisted hint; Admin derives display status from linked tasks."
+    },
+    "icon": {
+      "type": "string",
+      "description": "Emoji character(s) or a small image as a data: URL / https URL, shown inside the project hexagon."
+    },
+    "milestones": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "title": { "type": "string", "minLength": 1 },
+          "percentage": { "type": "number", "minimum": 0, "maximum": 100 },
+          "sort": { "type": "number" }
+        },
+        "additionalProperties": false
+      }
+    },
     "created_at": { "type": "string", "format": "date-time" },
     "updated_at": { "type": "string", "format": "date-time" },
     "drive": {
@@ -18,7 +42,8 @@
       "description": "Path prefixes inside the Space Drive this Project uses",
       "properties": {
         "private_prefix": { "type": "string" },
-        "public_prefix": { "type": "string" }
+        "public_prefix": { "type": "string" },
+        "home_prefix": { "type": "string" }
       }
     },
     "mail_list_id": { "type": ["string", "null"] },
