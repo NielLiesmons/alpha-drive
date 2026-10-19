@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://alpha.local/schemas/alpha.sales_line/1",
+  "title": "alpha.sales_line/1",
+  "description": "Atomic sales / revenue line (price per unit + channel). Linked into enterprise sheets for gross profit.",
+  "type": "object",
+  "required": ["schema", "id", "title", "price_cents", "currency", "created_at"],
+  "properties": {
+    "schema": { "const": "alpha.sales_line/1" },
+    "id": { "type": "string", "minLength": 1 },
+    "title": { "type": "string", "minLength": 1 },
+    "price_cents": { "type": "integer", "minimum": 0 },
+    "currency": { "type": "string", "minLength": 3, "maxLength": 3 },
+    "unit_label": { "type": "string" },
+    "channel": { "type": "string" },
+    "product_id": {
+      "type": ["string", "null"],
+      "description": "Optional link to public alpha.product/1 id"
+    },
+    "vat_rate_bp": { "type": "integer", "minimum": 0 },
+    "project_ids": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "labels": { "type": "array", "items": { "type": "string" } },
+    "memo": { "type": "string" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}

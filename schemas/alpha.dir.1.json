@@ -32,7 +32,10 @@
               "account",
               "ledger",
               "invoice",
-              "activity"
+              "activity",
+              "cost_item",
+              "sales_line",
+              "enterprise"
             ]
           },
           "wrapped_key": {

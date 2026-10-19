@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://alpha.local/schemas/alpha.enterprise/1",
+  "title": "alpha.enterprise/1",
+  "description": "Enterprise / activity sheet: composes atomic cost items + sales lines to compute gross profit. Does not embed amounts — links refs.",
+  "type": "object",
+  "required": ["schema", "id", "title", "status", "created_at"],
+  "properties": {
+    "schema": { "const": "alpha.enterprise/1" },
+    "id": { "type": "string", "minLength": 1 },
+    "title": { "type": "string", "minLength": 1 },
+    "description": { "type": "string" },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "active", "paused", "closed"]
+    },
+    "project_ids": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "fixed_costs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["cost_item_id"],
+        "properties": {
+          "cost_item_id": { "type": "string", "minLength": 1 },
+          "qty": { "type": "number", "minimum": 0, "default": 1 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "variable_costs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["cost_item_id"],
+        "properties": {
+          "cost_item_id": { "type": "string", "minLength": 1 },
+          "units_per_output": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Cost-item units consumed per output unit"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "sales": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["sales_line_id"],
+        "properties": {
+          "sales_line_id": { "type": "string", "minLength": 1 },
+          "units": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Expected sold units in the sheet period"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "output_unit_label": {
+      "type": "string",
+      "description": "What variable costs scale with, e.g. dozen/month"
+    },
+    "expected_output_units": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Period output used to scale variable costs"
+    },
+    "currency": { "type": "string", "minLength": 3, "maxLength": 3 },
+    "labels": { "type": "array", "items": { "type": "string" } },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}

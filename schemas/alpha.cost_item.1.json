@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://alpha.local/schemas/alpha.cost_item/1",
+  "title": "alpha.cost_item/1",
+  "description": "Atomic reusable cost line (fixed, variable, or capex). Linked into enterprise sheets and optionally to projects/tasks.",
+  "type": "object",
+  "required": ["schema", "id", "title", "behavior", "amount_cents", "currency", "created_at"],
+  "properties": {
+    "schema": { "const": "alpha.cost_item/1" },
+    "id": { "type": "string", "minLength": 1 },
+    "title": { "type": "string", "minLength": 1 },
+    "behavior": { "type": "string", "enum": ["fixed", "variable", "capex"] },
+    "amount_cents": { "type": "integer", "minimum": 0 },
+    "currency": { "type": "string", "minLength": 3, "maxLength": 3 },
+    "unit_label": {
+      "type": "string",
+      "description": "For variable: bag, hour, kg… For fixed period amount, leave empty."
+    },
+    "period": {
+      "type": "string",
+      "enum": ["once", "month", "year"],
+      "description": "How fixed/capex amounts recur (variable ignores)."
+    },
+    "account_id": { "type": ["string", "null"] },
+    "project_ids": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "task_ids": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "labels": { "type": "array", "items": { "type": "string" } },
+    "memo": { "type": "string" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}
