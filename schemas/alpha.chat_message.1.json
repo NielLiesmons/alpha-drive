@@ -34,6 +34,10 @@
     "reaction": {
       "type": "string",
       "description": "When kind=reaction: emoji or short code"
+    },
+    "reply_to": {
+      "type": ["string", "null"],
+      "description": "Parent chat_message id when this is a reply (quoted in UI)"
     }
   },
   "additionalProperties": false
