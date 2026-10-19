@@ -19,7 +19,21 @@
           },
           "kind": {
             "type": "string",
-            "enum": ["dir", "file", "project", "task", "blob"]
+            "enum": [
+              "dir",
+              "file",
+              "project",
+              "task",
+              "note",
+              "track",
+              "playlist",
+              "media",
+              "blob",
+              "account",
+              "ledger",
+              "invoice",
+              "activity"
+            ]
           },
           "wrapped_key": {
             "type": ["string", "null"],

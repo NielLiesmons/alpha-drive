@@ -1,11 +1,18 @@
-//! Project / Task helpers — encrypted JSON leaves on conventional paths.
+//! Project / Task / Note helpers — encrypted JSON leaves on conventional paths.
 //!
 //! Tree layout (see alpha-docs/DRIVE-LAYOUT.md):
 //! - `meta/space.json`
 //! - `projects/{id}/project.json`  (kind: project)
 //! - `projects/{id}/home/…`        (optional narrative folder)
 //! - `tasks/{id}/task.json`        (kind: task)
+//! - `notes/{id}/note.json`        (kind: note)
+//! - `accounts/{id}/account.json`  (kind: account) — Admin JS client first
+//! - `ledger/{id}/entry.json`      (kind: ledger)
+//! - `invoices/{id}/invoice.json`  (kind: invoice)
+//! - `activities/{id}/activity.json` (kind: activity)
 //! - `files/…` `media/…`           (blobs)
+//!
+//! Public shop catalog is **not** on private Drive — see ADR-accounting-commerce.
 
 use rand::RngCore;
 use serde::{Deserialize, Serialize};
@@ -96,6 +103,32 @@ impl Task {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Note {
+    pub schema: String,
+    pub id: String,
+    #[serde(default)]
+    pub project_ids: Vec<String>,
+    pub title: String,
+    #[serde(default)]
+    pub body: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub labels: Vec<String>,
+    pub created_at: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub updated_at: Option<String>,
+}
+
+impl Note {
+    pub fn normalize(&mut self) {
+        self.schema = "alpha.note/1".into();
+    }
+
+    pub fn links_project(&self, id: &str) -> bool {
+        self.project_ids.iter().any(|p| p == id)
+    }
+}
+
 pub fn new_id() -> String {
     let mut bytes = [0u8; 8];
     rand::thread_rng().fill_bytes(&mut bytes);
@@ -164,6 +197,10 @@ pub fn project_home_prefix(id: &str) -> String {
 
 pub fn task_path(id: &str) -> String {
     format!("tasks/{id}/task.json")
+}
+
+pub fn note_path(id: &str) -> String {
+    format!("notes/{id}/note.json")
 }
 
 pub async fn create_project(
@@ -306,6 +343,88 @@ pub async fn list_tasks(
                         t.normalize();
                         if project_id.map(|p| t.links_project(p)).unwrap_or(true) {
                             out.push(t);
+                        }
+                    }
+                }
+                Err(_) => continue,
+            }
+        }
+    }
+    out.sort_by(|a, b| a.title.cmp(&b.title));
+    Ok(out)
+}
+
+pub async fn create_note(
+    base: &str,
+    token: &str,
+    root_key: &str,
+    project_ids: &[String],
+    title: &str,
+    body: &str,
+) -> Result<Note, Box<dyn std::error::Error>> {
+    for pid in project_ids {
+        let _ = get_project(base, token, root_key, pid).await?;
+    }
+    let id = new_id();
+    let created = now_rfc3339();
+    let note = Note {
+        schema: "alpha.note/1".into(),
+        id: id.clone(),
+        project_ids: project_ids.to_vec(),
+        title: title.to_string(),
+        body: body.to_string(),
+        labels: Vec::new(),
+        created_at: created.clone(),
+        updated_at: Some(created),
+    };
+    let bytes = serde_json::to_vec_pretty(&note)?;
+    client::put_path(base, token, root_key, &note_path(&id), "note", &bytes).await?;
+    Ok(note)
+}
+
+pub async fn get_note(
+    base: &str,
+    token: &str,
+    root_key: &str,
+    id: &str,
+) -> Result<Note, Box<dyn std::error::Error>> {
+    let bytes = client::get_path(base, token, root_key, &note_path(id)).await?;
+    let mut note: Note = serde_json::from_slice(&bytes)?;
+    note.normalize();
+    Ok(note)
+}
+
+pub async fn put_note(
+    base: &str,
+    token: &str,
+    root_key: &str,
+    note: &Note,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let mut n = note.clone();
+    n.normalize();
+    n.schema = "alpha.note/1".into();
+    n.updated_at = Some(now_rfc3339());
+    let bytes = serde_json::to_vec_pretty(&n)?;
+    client::put_path(base, token, root_key, &note_path(&n.id), "note", &bytes).await?;
+    Ok(())
+}
+
+pub async fn list_notes(
+    base: &str,
+    token: &str,
+    root_key: &str,
+    project_id: Option<&str>,
+) -> Result<Vec<Note>, Box<dyn std::error::Error>> {
+    let dir = client::list_dir(base, token, root_key).await?;
+    let mut out = Vec::new();
+    for (path, child) in dir.children {
+        if child.kind == "note" || path.ends_with("/note.json") {
+            match client::get_path(base, token, root_key, &path).await {
+                Ok(bytes) => {
+                    if let Ok(mut n) = serde_json::from_slice::<Note>(&bytes) {
+                        n.normalize();
+                        if project_id.map(|p| n.links_project(p)).unwrap_or(true) {
+                            out.push(n);
                         }
                     }
                 }

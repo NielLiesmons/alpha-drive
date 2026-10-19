@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://alpha.local/schemas/alpha.invoice/1",
+  "title": "alpha.invoice/1",
+  "description": "Supplier or customer invoice metadata. PDF lives as a Drive blob; this entity is queryable.",
+  "type": "object",
+  "required": ["schema", "id", "role", "status", "currency", "total_cents", "issued_at", "created_at"],
+  "properties": {
+    "schema": { "const": "alpha.invoice/1" },
+    "id": { "type": "string", "minLength": 1 },
+    "number": { "type": "string" },
+    "role": { "type": "string", "enum": ["payable", "receivable"] },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "open", "paid", "void", "overdue"]
+    },
+    "currency": { "type": "string", "minLength": 3, "maxLength": 3 },
+    "total_cents": { "type": "integer", "minimum": 0 },
+    "tax_cents": { "type": "integer", "minimum": 0 },
+    "party_name": { "type": "string" },
+    "issued_at": { "type": "string", "format": "date-time" },
+    "due_at": { "type": ["string", "null"], "format": "date-time" },
+    "paid_at": { "type": ["string", "null"], "format": "date-time" },
+    "project_ids": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "attachment_path": {
+      "type": ["string", "null"],
+      "description": "Drive path to PDF or scan"
+    },
+    "entry_ids": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Linked ledger entry ids"
+    },
+    "memo": { "type": "string" },
+    "labels": { "type": "array", "items": { "type": "string" } },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}

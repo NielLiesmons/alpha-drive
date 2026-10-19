@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://alpha.local/schemas/alpha.ledger_entry/1",
+  "title": "alpha.ledger_entry/1",
+  "description": "Atomic money movement. Links projects/tasks via labels; amounts in integer cents.",
+  "type": "object",
+  "required": [
+    "schema",
+    "id",
+    "occurred_at",
+    "currency",
+    "amount_cents",
+    "direction",
+    "account_id",
+    "kind",
+    "created_at"
+  ],
+  "properties": {
+    "schema": { "const": "alpha.ledger_entry/1" },
+    "id": { "type": "string", "minLength": 1 },
+    "occurred_at": { "type": "string", "format": "date-time" },
+    "currency": { "type": "string", "minLength": 3, "maxLength": 3 },
+    "amount_cents": { "type": "integer", "minimum": 0 },
+    "direction": { "type": "string", "enum": ["in", "out"] },
+    "account_id": { "type": "string", "minLength": 1 },
+    "counter_account_id": { "type": ["string", "null"] },
+    "kind": { "type": "string", "enum": ["actual", "planned", "scenario"] },
+    "cost_behavior": {
+      "type": "string",
+      "enum": ["fixed", "variable", "capex", "none"]
+    },
+    "project_ids": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "task_ids": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "activity_id": { "type": ["string", "null"] },
+    "invoice_id": { "type": ["string", "null"] },
+    "order_id": { "type": ["string", "null"] },
+    "channel": {
+      "type": "string",
+      "description": "farmgate | market | boutique | csa | pro | web | other"
+    },
+    "tax": {
+      "type": "object",
+      "properties": {
+        "code": { "type": "string" },
+        "rate_bp": { "type": "integer", "minimum": 0, "description": "Basis points (550 = 5.5%)" },
+        "amount_cents": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "party": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "role": { "type": "string", "enum": ["supplier", "customer", "other"] }
+      },
+      "additionalProperties": false
+    },
+    "memo": { "type": "string" },
+    "attachments": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Drive paths to PDFs / photos"
+    },
+    "labels": { "type": "array", "items": { "type": "string" } },
+    "author": { "type": "string", "description": "Mailbox email" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}

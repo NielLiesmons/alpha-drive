@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://alpha.local/schemas/alpha.account/1",
+  "title": "alpha.account/1",
+  "description": "Chart-of-accounts leaf. Used by ledger entries; portable export later.",
+  "type": "object",
+  "required": ["schema", "id", "code", "title", "kind", "created_at"],
+  "properties": {
+    "schema": { "const": "alpha.account/1" },
+    "id": { "type": "string", "minLength": 1 },
+    "code": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Stable short code, e.g. feed, sales-eggs, vat-out"
+    },
+    "title": { "type": "string", "minLength": 1 },
+    "kind": {
+      "type": "string",
+      "enum": ["asset", "liability", "equity", "income", "expense", "tax"]
+    },
+    "currency": { "type": "string", "default": "EUR", "minLength": 3, "maxLength": 3 },
+    "labels": { "type": "array", "items": { "type": "string" } },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}

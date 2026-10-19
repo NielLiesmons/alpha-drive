@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://alpha.local/schemas/alpha.activity/1",
+  "title": "alpha.activity/1",
+  "description": "Farm or project activity model for planned/scenario P&L (fixed vs variable costs, channels).",
+  "type": "object",
+  "required": ["schema", "id", "title", "status", "created_at"],
+  "properties": {
+    "schema": { "const": "alpha.activity/1" },
+    "id": { "type": "string", "minLength": 1 },
+    "title": { "type": "string", "minLength": 1 },
+    "description": { "type": "string" },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "active", "paused", "closed"]
+    },
+    "project_ids": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "fixed_cost_cents_month": { "type": "integer", "minimum": 0 },
+    "variable_cost_per_unit_cents": { "type": "integer", "minimum": 0 },
+    "unit_label": { "type": "string", "description": "e.g. dozen eggs, litre, kg" },
+    "expected_units_month": { "type": "number", "minimum": 0 },
+    "price_per_unit_cents": { "type": "integer", "minimum": 0 },
+    "channels": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Expected sales channels"
+    },
+    "currency": { "type": "string", "minLength": 3, "maxLength": 3 },
+    "labels": { "type": "array", "items": { "type": "string" } },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}
