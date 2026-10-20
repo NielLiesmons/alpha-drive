@@ -78,10 +78,15 @@ enum Cmd {
         #[command(subcommand)]
         cmd: ProjectCmd,
     },
-    /// Task entity helpers (`alpha.task/2`).
+    /// Task entity helpers (`alpha.task/3`).
     Task {
         #[command(subcommand)]
         cmd: TaskCmd,
+    },
+    /// Note entity helpers (`alpha.note/1`).
+    Note {
+        #[command(subcommand)]
+        cmd: NoteCmd,
     },
 }
 
@@ -132,6 +137,44 @@ enum TaskCmd {
         projects: Vec<String>,
         #[arg(long)]
         title: String,
+    },
+    Get {
+        #[arg(long, default_value = "http://127.0.0.1:8787")]
+        url: String,
+        #[arg(long, env = "ALPHA_DRIVE_TOKEN")]
+        token: String,
+        #[arg(long, env = "ALPHA_DRIVE_ROOT_KEY")]
+        root_key: String,
+        id: String,
+    },
+    List {
+        #[arg(long, default_value = "http://127.0.0.1:8787")]
+        url: String,
+        #[arg(long, env = "ALPHA_DRIVE_TOKEN")]
+        token: String,
+        #[arg(long, env = "ALPHA_DRIVE_ROOT_KEY")]
+        root_key: String,
+        #[arg(long)]
+        project: Option<String>,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+enum NoteCmd {
+    Create {
+        #[arg(long, default_value = "http://127.0.0.1:8787")]
+        url: String,
+        #[arg(long, env = "ALPHA_DRIVE_TOKEN")]
+        token: String,
+        #[arg(long, env = "ALPHA_DRIVE_ROOT_KEY")]
+        root_key: String,
+        /// Project id to label this note with (repeatable).
+        #[arg(long = "project")]
+        projects: Vec<String>,
+        #[arg(long)]
+        title: String,
+        #[arg(long, default_value = "")]
+        body: String,
     },
     Get {
         #[arg(long, default_value = "http://127.0.0.1:8787")]
@@ -274,6 +317,39 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             } => {
                 let list =
                     entities::list_tasks(&url, &token, &root_key, project.as_deref()).await?;
+                println!("{}", serde_json::to_string_pretty(&list)?);
+            }
+        },
+        Cmd::Note { cmd } => match cmd {
+            NoteCmd::Create {
+                url,
+                token,
+                root_key,
+                projects,
+                title,
+                body,
+            } => {
+                let n = entities::create_note(&url, &token, &root_key, &projects, &title, &body)
+                    .await?;
+                println!("{}", serde_json::to_string_pretty(&n)?);
+            }
+            NoteCmd::Get {
+                url,
+                token,
+                root_key,
+                id,
+            } => {
+                let n = entities::get_note(&url, &token, &root_key, &id).await?;
+                println!("{}", serde_json::to_string_pretty(&n)?);
+            }
+            NoteCmd::List {
+                url,
+                token,
+                root_key,
+                project,
+            } => {
+                let list =
+                    entities::list_notes(&url, &token, &root_key, project.as_deref()).await?;
                 println!("{}", serde_json::to_string_pretty(&list)?);
             }
         },

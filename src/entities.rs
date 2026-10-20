@@ -72,7 +72,11 @@ pub struct Task {
     pub created_at: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub updated_at: Option<String>,
+    /// Optional deadline (schedule lives on `alpha.moment/1`).
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub deadline_at: Option<String>,
+    /// Legacy alias — folded into `deadline_at` on normalize.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub due_at: Option<String>,
 }
 
@@ -85,7 +89,7 @@ impl Task {
         } else {
             self.project_id = None;
         }
-        // Map legacy alpha.task/1 statuses → /2
+        // Map legacy alpha.task/1 statuses → /3
         self.status = match self.status.as_str() {
             "todo" => "open".into(),
             "doing" => "inProgress".into(),
@@ -93,13 +97,47 @@ impl Task {
             "cancelled" => "canceled".into(),
             other => other.to_string(),
         };
-        if self.schema == "alpha.task/1" {
-            self.schema = "alpha.task/2".into();
+        if self.deadline_at.is_none() {
+            self.deadline_at = self.due_at.take();
+        } else {
+            self.due_at = None;
+        }
+        if self.schema == "alpha.task/1" || self.schema == "alpha.task/2" {
+            self.schema = "alpha.task/3".into();
         }
     }
 
     pub fn links_project(&self, id: &str) -> bool {
         self.project_ids.iter().any(|p| p == id)
+    }
+}
+
+/// Calendar / Planning slice — optional `task_id` (null = free calendar block).
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Moment {
+    pub schema: String,
+    pub id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub task_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    pub start_at: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub end_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub assignees: Vec<String>,
+    pub status: String,
+    pub created_at: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub updated_at: Option<String>,
+}
+
+impl Moment {
+    pub fn normalize(&mut self) {
+        self.schema = "alpha.moment/1".into();
+        if self.status.is_empty() {
+            self.status = "planned".into();
+        }
     }
 }
 
@@ -199,6 +237,10 @@ pub fn task_path(id: &str) -> String {
     format!("tasks/{id}/task.json")
 }
 
+pub fn moment_path(id: &str) -> String {
+    format!("moments/{id}/moment.json")
+}
+
 pub fn note_path(id: &str) -> String {
     format!("notes/{id}/note.json")
 }
@@ -281,7 +323,7 @@ pub async fn create_task(
     let id = new_id();
     let created = now_rfc3339();
     let task = Task {
-        schema: "alpha.task/2".into(),
+        schema: "alpha.task/3".into(),
         id: id.clone(),
         project_ids: project_ids.to_vec(),
         project_id: None,
@@ -293,6 +335,7 @@ pub async fn create_task(
         milestone_id: None,
         created_at: created.clone(),
         updated_at: Some(created),
+        deadline_at: None,
         due_at: None,
     };
     let body = serde_json::to_vec_pretty(&task)?;
@@ -320,11 +363,69 @@ pub async fn put_task(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut t = task.clone();
     t.normalize();
-    t.schema = "alpha.task/2".into();
+    t.schema = "alpha.task/3".into();
     t.updated_at = Some(now_rfc3339());
     let body = serde_json::to_vec_pretty(&t)?;
     client::put_path(base, token, root_key, &task_path(&t.id), "task", &body).await?;
     Ok(())
+}
+
+pub async fn create_moment(
+    base: &str,
+    token: &str,
+    root_key: &str,
+    task_id: Option<&str>,
+    title: Option<&str>,
+    start_at: &str,
+    end_at: Option<&str>,
+) -> Result<Moment, Box<dyn std::error::Error>> {
+    if let Some(tid) = task_id {
+        let _ = get_task(base, token, root_key, tid).await?;
+    }
+    let id = new_id();
+    let created = now_rfc3339();
+    let moment = Moment {
+        schema: "alpha.moment/1".into(),
+        id: id.clone(),
+        task_id: task_id.map(|s| s.to_string()),
+        title: title.map(|s| s.to_string()),
+        start_at: start_at.to_string(),
+        end_at: end_at.map(|s| s.to_string()),
+        assignees: Vec::new(),
+        status: "planned".into(),
+        created_at: created.clone(),
+        updated_at: Some(created),
+    };
+    let body = serde_json::to_vec_pretty(&moment)?;
+    client::put_path(base, token, root_key, &moment_path(&id), "moment", &body).await?;
+    Ok(moment)
+}
+
+pub async fn list_moments(
+    base: &str,
+    token: &str,
+    root_key: &str,
+    task_id: Option<&str>,
+) -> Result<Vec<Moment>, Box<dyn std::error::Error>> {
+    let dir = client::list_dir(base, token, root_key).await?;
+    let mut out = Vec::new();
+    for (path, child) in dir.children {
+        if child.kind == "moment" || path.ends_with("/moment.json") {
+            match client::get_path(base, token, root_key, &path).await {
+                Ok(bytes) => {
+                    if let Ok(mut m) = serde_json::from_slice::<Moment>(&bytes) {
+                        m.normalize();
+                        if task_id.map(|t| m.task_id.as_deref() == Some(t)).unwrap_or(true) {
+                            out.push(m);
+                        }
+                    }
+                }
+                Err(_) => continue,
+            }
+        }
+    }
+    out.sort_by(|a, b| a.start_at.cmp(&b.start_at));
+    Ok(out)
 }
 
 pub async fn list_tasks(

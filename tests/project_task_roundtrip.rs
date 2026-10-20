@@ -1,4 +1,4 @@
-//! Project + Task encrypted round-trip; wrong key cannot read.
+//! Project + Task + Note encrypted round-trip; wrong key cannot read.
 
 use std::net::SocketAddr;
 use std::time::Duration;
@@ -65,7 +65,7 @@ async fn project_and_task_round_trip() {
     )
     .await
     .expect("create task");
-    assert_eq!(task.schema, "alpha.task/2");
+    assert_eq!(task.schema, "alpha.task/3");
     assert_eq!(task.project_ids.len(), 2);
     assert!(task.links_project(&project.id));
     assert!(task.links_project(&other.id));
@@ -75,6 +75,43 @@ async fn project_and_task_round_trip() {
         .await
         .expect("get task");
     assert_eq!(got_task.title, "Order CSA boxes");
+
+    let moment = entities::create_moment(
+        &url,
+        &token,
+        &root,
+        Some(&task.id),
+        None,
+        "2026-10-21T08:00:00Z",
+        Some("2026-10-21T09:00:00Z"),
+    )
+    .await
+    .expect("create moment");
+    assert_eq!(moment.schema, "alpha.moment/1");
+    assert_eq!(moment.task_id.as_deref(), Some(task.id.as_str()));
+
+    let free = entities::create_moment(
+        &url,
+        &token,
+        &root,
+        None,
+        Some("Vet visit"),
+        "2026-10-22T14:00:00Z",
+        Some("2026-10-22T15:00:00Z"),
+    )
+    .await
+    .expect("create free calendar moment");
+    assert!(free.task_id.is_none());
+
+    let moments = entities::list_moments(&url, &token, &root, Some(&task.id))
+        .await
+        .expect("list moments for task");
+    assert_eq!(moments.len(), 1);
+
+    let all_moments = entities::list_moments(&url, &token, &root, None)
+        .await
+        .expect("list all moments");
+    assert_eq!(all_moments.len(), 2);
 
     let projects = entities::list_projects(&url, &token, &root)
         .await
@@ -90,6 +127,35 @@ async fn project_and_task_round_trip() {
         .await
         .expect("list by other");
     assert_eq!(tasks_other.len(), 1);
+
+    let note = entities::create_note(
+        &url,
+        &token,
+        &root,
+        &[project.id.clone()],
+        "Drop-off planning",
+        "## This week\n\n- Wednesday: Guingamp\n",
+    )
+    .await
+    .expect("create note");
+    assert_eq!(note.schema, "alpha.note/1");
+    assert!(note.links_project(&project.id));
+    assert!(note.body.contains("Guingamp"));
+
+    let got_note = entities::get_note(&url, &token, &root, &note.id)
+        .await
+        .expect("get note");
+    assert_eq!(got_note.title, "Drop-off planning");
+
+    let notes = entities::list_notes(&url, &token, &root, Some(&project.id))
+        .await
+        .expect("list notes");
+    assert_eq!(notes.len(), 1);
+
+    let notes_other = entities::list_notes(&url, &token, &root, Some(&other.id))
+        .await
+        .expect("list notes other");
+    assert!(notes_other.is_empty());
 }
 
 #[tokio::test]

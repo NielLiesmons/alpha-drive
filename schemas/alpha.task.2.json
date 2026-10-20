@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://alpha.local/schemas/alpha.task/2",
   "title": "alpha.task/2",
-  "description": "Task content object. Links zero or more Projects via project_ids (labels), not filesystem parenthood.",
+  "description": "Task content object (legacy). Prefer alpha.task/3 — deadline_at + alpha.moment/1 for schedule. Links zero or more Projects via project_ids.",
   "type": "object",
   "required": ["schema", "id", "project_ids", "title", "status", "created_at"],
   "properties": {

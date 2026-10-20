@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://alpha.local/schemas/alpha.moment/1",
+  "title": "alpha.moment/1",
+  "description": "Calendar / Planning time slice. Optionally linked to a task; without task_id it is a general calendar block. Assignees are per-moment. Recurring series are templates expanded in the client.",
+  "type": "object",
+  "required": ["schema", "id", "start_at", "status", "created_at"],
+  "properties": {
+    "schema": { "const": "alpha.moment/1" },
+    "id": { "type": "string", "minLength": 1 },
+    "task_id": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "description": "Parent task when this slice is work on a task; null for a free calendar block"
+    },
+    "title": {
+      "type": ["string", "null"],
+      "description": "Override label (or required for calendar-only blocks). UI falls back to task title when linked."
+    },
+    "start_at": { "type": "string", "format": "date-time" },
+    "end_at": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "End of the slice; if null, treat as point or short default duration in UI"
+    },
+    "assignees": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true,
+      "description": "Mailbox emails for this slice"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["planned", "done", "skipped", "canceled"]
+    },
+    "recurrence": {
+      "type": ["object", "null"],
+      "description": "When set, this moment is a series template (expand in calendar clients)",
+      "required": ["freq"],
+      "properties": {
+        "freq": { "type": "string", "enum": ["daily", "weekly"] },
+        "interval": { "type": "integer", "minimum": 1, "default": 1 },
+        "by_weekday": {
+          "type": "array",
+          "items": { "type": "string", "enum": ["mo", "tu", "we", "th", "fr", "sa", "su"] },
+          "uniqueItems": true
+        },
+        "until": { "type": ["string", "null"], "format": "date-time" },
+        "local_start": {
+          "type": "string",
+          "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$",
+          "description": "HH:MM in timezone"
+        },
+        "local_end": {
+          "type": "string",
+          "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+        },
+        "timezone": { "type": "string", "minLength": 1, "description": "IANA tz, e.g. Europe/Brussels" }
+      },
+      "additionalProperties": false
+    },
+    "recurrence_exception_of": {
+      "type": ["string", "null"],
+      "description": "Series moment id when this is a one-off override"
+    },
+    "recurrence_instance": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Original occurrence start this exception replaces"
+    },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}

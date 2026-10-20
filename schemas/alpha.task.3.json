@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://alpha.local/schemas/alpha.task/3",
+  "title": "alpha.task/3",
+  "description": "Task content object. Schedule lives on alpha.moment/1; optional deadline_at on the task. Links zero or more Projects via project_ids.",
+  "type": "object",
+  "required": ["schema", "id", "project_ids", "title", "status", "created_at"],
+  "properties": {
+    "schema": { "const": "alpha.task/3" },
+    "id": { "type": "string", "minLength": 1 },
+    "project_ids": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "project_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Deprecated singular from alpha.task/1 — clients should prefer project_ids"
+    },
+    "title": { "type": "string", "minLength": 1 },
+    "description": { "type": "string" },
+    "status": {
+      "type": "string",
+      "enum": ["backlog", "open", "inProgress", "inReview", "recurring", "closed", "canceled"],
+      "description": "recurring = ongoing chore (harvest eggs…); schedule via moments with recurrence"
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["none", "low", "medium", "high", "urgent"]
+    },
+    "labels": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "milestone_id": { "type": ["string", "null"] },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "deadline_at": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Optional due date; calendar bars come from moments, not this field"
+    },
+    "due_at": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Legacy alias for deadline_at (alpha.task/2); normalize to deadline_at on write"
+    },
+    "depends_on": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true,
+      "description": "Other task ids this task depends on"
+    }
+  },
+  "additionalProperties": false
+}
