@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://alpha.local/schemas/alpha.enterprise/1",
   "title": "alpha.enterprise/1",
-  "description": "Enterprise / activity sheet: composes atomic cost items + sales lines to compute gross profit. Does not embed amounts — links refs.",
+  "description": "Farm enterprise / activity line above Projects (General, Eggs, Sheep…). Owns accounting sheet composition (atomic costs + sales → gross). Projects link via enterprise_ids[].",
   "type": "object",
   "required": ["schema", "id", "title", "status", "created_at"],
   "properties": {
@@ -14,10 +14,24 @@
       "type": "string",
       "enum": ["draft", "active", "paused", "closed"]
     },
+    "kind": {
+      "type": "string",
+      "enum": ["general", "activity"],
+      "description": "general = rollup/overview; activity = Eggs, Sheep, Mushrooms…"
+    },
+    "icon": {
+      "type": "string",
+      "description": "Emoji or image URL for EnterpriseBox"
+    },
+    "sort": {
+      "type": "number",
+      "description": "Planning / Gantt row order (lower first)"
+    },
     "project_ids": {
       "type": "array",
       "items": { "type": "string", "minLength": 1 },
-      "uniqueItems": true
+      "uniqueItems": true,
+      "description": "Optional denormalized list; prefer project.enterprise_ids[]"
     },
     "fixed_costs": {
       "type": "array",

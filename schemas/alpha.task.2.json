@@ -35,7 +35,23 @@
     "milestone_id": { "type": ["string", "null"] },
     "created_at": { "type": "string", "format": "date-time" },
     "updated_at": { "type": "string", "format": "date-time" },
-    "due_at": { "type": ["string", "null"], "format": "date-time" }
+    "due_at": { "type": ["string", "null"], "format": "date-time" },
+    "start_at": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Planning / Gantt bar start"
+    },
+    "end_at": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Planning / Gantt bar end"
+    },
+    "depends_on": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true,
+      "description": "Other task ids this task depends on"
+    }
   },
   "additionalProperties": false
 }
