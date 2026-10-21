@@ -21,13 +21,18 @@
     },
     "icon": {
       "type": "string",
-      "description": "Emoji character(s), or later a custom/image emoji reference (data URL / https URL)."
+      "description": "Optional override emoji/image. When unset, UI inherits the primary enterprise icon."
+    },
+    "primary_enterprise_id": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "description": "Primary farm enterprise this project belongs to (required in practice). Planning groups by this; icon inherits from that enterprise."
     },
     "enterprise_ids": {
       "type": "array",
       "items": { "type": "string", "minLength": 1 },
       "uniqueItems": true,
-      "description": "Zero or more farm enterprises this project belongs to (General, Eggs…)"
+      "description": "All enterprises this project touches; must include primary_enterprise_id when set. Extra ids are secondary memberships."
     },
     "depends_on": {
       "type": "array",

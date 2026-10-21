@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://alpha.local/schemas/alpha.enterprise/1",
   "title": "alpha.enterprise/1",
-  "description": "Farm enterprise / activity line above Projects (General, Eggs, Sheep…). Owns accounting sheet composition (atomic costs + sales → gross). Projects link via enterprise_ids[].",
+  "description": "Farm enterprise / activity line above Projects (General, Eggs, Sheep…). Owns accounting sheet composition (atomic costs + sales → gross) and the emoji projects inherit via primary_enterprise_id. Planning shows enterprises as a vertical-title rail beside project rows.",
   "type": "object",
   "required": ["schema", "id", "title", "status", "created_at"],
   "properties": {
