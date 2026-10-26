@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://alpha.local/schemas/alpha.table_row/1",
+  "title": "alpha.table_row/1",
+  "description": "One row of an alpha.table/1. Separate leaf so phone appends do not rewrite the table schema doc.",
+  "type": "object",
+  "required": ["schema", "id", "table_id", "cells", "created_at"],
+  "properties": {
+    "schema": { "const": "alpha.table_row/1" },
+    "id": { "type": "string", "minLength": 1 },
+    "table_id": { "type": "string", "minLength": 1 },
+    "cells": {
+      "type": "object",
+      "description": "Map column id → value (number, string, bool, or ISO date)",
+      "additionalProperties": true
+    },
+    "occurred_on": {
+      "type": "string",
+      "description": "Optional calendar day for logs (YYYY-MM-DD)"
+    },
+    "author": {
+      "type": "string",
+      "description": "Mailbox email of who wrote the row"
+    },
+    "labels": { "type": "array", "items": { "type": "string" } },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}

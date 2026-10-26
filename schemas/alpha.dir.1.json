@@ -36,8 +36,14 @@
               "cost_item",
               "sales_line",
               "enterprise",
+              "table",
+              "table_row",
+              "metric",
+              "form",
               "chat_message",
-              "chat_feed"
+              "chat_feed",
+              "mail_message",
+              "mail_index"
             ]
           },
           "wrapped_key": {

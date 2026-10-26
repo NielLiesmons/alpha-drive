@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://alpha.local/schemas/alpha.table/1",
+  "title": "alpha.table/1",
+  "description": "Modular typed table (Airtable-like). Rows live as alpha.table_row/1. Feeds named metrics and enterprise sheets.",
+  "type": "object",
+  "required": ["schema", "id", "title", "columns", "created_at"],
+  "properties": {
+    "schema": { "const": "alpha.table/1" },
+    "id": { "type": "string", "minLength": 1 },
+    "title": { "type": "string", "minLength": 1 },
+    "key": {
+      "type": "string",
+      "description": "Stable slug for formulas, e.g. egg_actuals (defaults to id if unset)"
+    },
+    "description": { "type": "string" },
+    "enterprise_id": {
+      "type": ["string", "null"],
+      "description": "Optional owning enterprise for navigation"
+    },
+    "columns": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "key", "label", "type"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "key": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Stable column key for formulas (dozen, hens…)"
+          },
+          "label": { "type": "string", "minLength": 1 },
+          "type": {
+            "type": "string",
+            "enum": ["number", "text", "date", "bool", "select"]
+          },
+          "unit": { "type": "string" },
+          "formula": {
+            "type": "string",
+            "description": "Optional per-row expression (same dialect as metrics)"
+          },
+          "options": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "For type=select"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "labels": { "type": "array", "items": { "type": "string" } },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}

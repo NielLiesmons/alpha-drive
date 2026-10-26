@@ -84,7 +84,17 @@
     "expected_output_units": {
       "type": "number",
       "minimum": 0,
-      "description": "Period output used to scale variable costs"
+      "description": "Period output used to scale variable costs (literal fallback)"
+    },
+    "expected_output_from_metric_id": {
+      "type": ["string", "null"],
+      "description": "When set, gross calc prefers evaluated metric value over expected_output_units"
+    },
+    "table_ids": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true,
+      "description": "Operational tables belonging to this enterprise (navigation)"
     },
     "currency": { "type": "string", "minLength": 3, "maxLength": 3 },
     "labels": { "type": "array", "items": { "type": "string" } },

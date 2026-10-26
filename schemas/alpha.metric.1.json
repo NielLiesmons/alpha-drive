@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://alpha.local/schemas/alpha.metric/1",
+  "title": "alpha.metric/1",
+  "description": "Named formula over tables — cross-sheet glue for enterprise output bindings. value/computed_at are disposable cache.",
+  "type": "object",
+  "required": ["schema", "id", "key", "expr", "created_at"],
+  "properties": {
+    "schema": { "const": "alpha.metric/1" },
+    "id": { "type": "string", "minLength": 1 },
+    "key": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Stable name e.g. eggs.forecast_dozen_month"
+    },
+    "title": { "type": "string" },
+    "enterprise_id": { "type": ["string", "null"] },
+    "expr": {
+      "type": "string",
+      "minLength": 1,
+      "description": "e.g. sum(table:egg_actuals, col:dozen) or metric:eggs.forecast * 0.9"
+    },
+    "unit": { "type": "string" },
+    "value": {
+      "type": ["number", "null"],
+      "description": "Last evaluated cache only"
+    },
+    "computed_at": {
+      "type": ["string", "null"],
+      "format": "date-time"
+    },
+    "labels": { "type": "array", "items": { "type": "string" } },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}
