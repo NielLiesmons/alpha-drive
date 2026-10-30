@@ -10,7 +10,8 @@
     "id": { "type": "string", "minLength": 1 },
     "kind": {
       "type": "string",
-      "enum": ["comment", "reaction", "chat"]
+      "enum": ["comment", "reaction", "chat", "event"],
+      "description": "event = entity created/shared tip (e.g. added a Task); ref required; body usually empty"
     },
     "author": {
       "type": "string",
@@ -38,6 +39,20 @@
     "reply_to": {
       "type": ["string", "null"],
       "description": "Parent chat_message id when this is a reply (quoted in UI)"
+    },
+    "channel_id": {
+      "type": "string",
+      "description": "Owning channel (default general). DMs/agents use their channel id."
+    },
+    "delivery": {
+      "type": "string",
+      "enum": ["sending", "sent", "delivered", "read"],
+      "description": "Outgoing receipts: sent = on Drive/server; delivered = peer device ack; read = opened. UI: single check / double check."
+    },
+    "read_by": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Emails that marked this message read (optional aggregate)"
     }
   },
   "additionalProperties": false
