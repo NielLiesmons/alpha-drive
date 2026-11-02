@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://alpha.local/schemas/alpha.chat_ephemeral/1",
+  "title": "alpha.chat_ephemeral/1",
+  "description": "Realtime-only presence for a channel (not Drive SoT). Typing, recording, or agent activity — fan out via WS now / Iroh later (see ADR-iroh-realtime); never written to Drive tip. Clients paint animated dots / status next to a pfp and drop by expires_at.",
+  "type": "object",
+  "required": ["schema", "channel_id", "actor", "state", "updated_at"],
+  "properties": {
+    "schema": { "const": "alpha.chat_ephemeral/1" },
+    "channel_id": { "type": "string", "minLength": 1 },
+    "actor": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Member email or agent id"
+    },
+    "state": {
+      "type": "string",
+      "enum": ["typing", "recording", "thinking", "tool", "idle"],
+      "description": "typing/recording = humans; thinking/tool = agents; idle clears the row"
+    },
+    "label": {
+      "type": "string",
+      "description": "Optional human status (“Searching Drive…”) for agents"
+    },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Client should drop if stale"
+    }
+  },
+  "additionalProperties": false
+}
