@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://alpha.local/schemas/alpha.chat_ephemeral/1",
   "title": "alpha.chat_ephemeral/1",
-  "description": "Realtime-only presence for a channel (not Drive SoT). Typing, recording, or agent activity — fan out via WS now / Iroh later (see ADR-iroh-realtime); never written to Drive tip. Clients paint animated dots / status next to a pfp and drop by expires_at.",
+  "description": "Realtime-only presence for a channel (not Drive SoT). Typing, recording, or agent activity — Alpha realtime bus envelope type=ephemeral (WebSocket now, QUIC/Iroh later; see ADR-iroh-realtime). Never written to Drive tip. Clients paint status next to a pfp and drop by expires_at.",
   "type": "object",
   "required": ["schema", "channel_id", "actor", "state", "updated_at"],
   "properties": {

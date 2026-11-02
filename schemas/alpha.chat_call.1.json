@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://alpha.local/schemas/alpha.chat_call/1",
+  "title": "alpha.chat_call/1",
+  "description": "Call signaling payload inside realtime bus envelope type=call (WebSocket / QUIC). Media is WebRTC or Iroh — never stored on Drive as live A/V.",
+  "type": "object",
+  "required": ["channel_id", "action", "from"],
+  "properties": {
+    "channel_id": { "type": "string", "minLength": 1 },
+    "action": {
+      "type": "string",
+      "enum": ["invite", "accept", "reject", "hangup", "signal"]
+    },
+    "from": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Caller / sender email or device id"
+    },
+    "to": {
+      "type": "string",
+      "description": "Optional target peer"
+    },
+    "sdp": {
+      "type": "string",
+      "description": "SDP offer/answer when action=signal"
+    },
+    "ice": {
+      "description": "ICE candidate object or string when action=signal"
+    }
+  },
+  "additionalProperties": true
+}
