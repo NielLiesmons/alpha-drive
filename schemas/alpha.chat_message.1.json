@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://alpha.local/schemas/alpha.chat_message/1",
   "title": "alpha.chat_message/1",
-  "description": "Private family chat / comment leaf. Drive is SoT; Chatmail may carry a notify envelope separately.",
+  "description": "Private chat / comment leaf. Drive is SoT.",
   "type": "object",
   "required": ["schema", "id", "kind", "author", "body", "created_at"],
   "properties": {
@@ -11,12 +11,12 @@
     "kind": {
       "type": "string",
       "enum": ["comment", "reaction", "chat", "event"],
-      "description": "event = entity created/shared tip (e.g. added a Task); ref required; body usually empty"
+      "description": "event = entity created/shared tip; ref required; body usually empty"
     },
     "author": {
       "type": "string",
       "minLength": 1,
-      "description": "Mailbox email of the member (not chatmail relay addr)"
+      "description": "Mailbox email of the member"
     },
     "body": { "type": "string" },
     "created_at": { "type": "string", "format": "date-time" },
@@ -38,21 +38,41 @@
     },
     "reply_to": {
       "type": ["string", "null"],
-      "description": "Parent chat_message id when this is a reply (quoted in UI)"
+      "description": "Parent chat_message id when this is a reply"
     },
     "channel_id": {
       "type": "string",
-      "description": "Owning channel (default general). DMs/agents use their channel id."
+      "description": "Owning chat (default general)"
     },
     "delivery": {
       "type": "string",
       "enum": ["sending", "sent", "delivered", "read"],
-      "description": "Outgoing receipts: sent = on Drive/server; delivered = peer device ack; read = opened. UI: single check / double check."
+      "description": "sent = on Drive; read = at least one other account opened it"
     },
     "read_by": {
       "type": "array",
       "items": { "type": "string", "minLength": 1 },
-      "description": "Emails that marked this message read (optional aggregate)"
+      "description": "Emails that marked this message read"
+    },
+    "attachments": {
+      "type": "array",
+      "description": "Media / files on Drive (chat/media/… or media_blob manifest)",
+      "items": {
+        "type": "object",
+        "required": ["path", "content_type", "kind"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "content_type": { "type": "string", "minLength": 1 },
+          "kind": {
+            "type": "string",
+            "enum": ["image", "video", "file", "voice"]
+          },
+          "name": { "type": "string" },
+          "bytes": { "type": "integer", "minimum": 0 },
+          "duration_ms": { "type": "integer", "minimum": 0 }
+        },
+        "additionalProperties": false
+      }
     }
   },
   "additionalProperties": false
