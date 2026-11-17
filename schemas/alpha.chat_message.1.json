@@ -26,9 +26,19 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["task", "note", "project", "enterprise", "chat"]
+          "enum": ["task", "note", "project", "enterprise", "mail", "chat", "sheet", "table", "ai_thread", "git_repo", "file"]
         },
-        "id": { "type": "string", "minLength": 1 }
+        "id": { "type": "string", "minLength": 1 },
+        "action": { "type": "string" },
+        "title": { "type": "string" },
+        "subject": { "type": "string" },
+        "from": { "type": "string" },
+        "from_name": { "type": "string" },
+        "seq": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "0-based index of this comment on the entity thread. Instantly tells the feed if earlier comments exist (seq > 0)."
+        }
       },
       "additionalProperties": false
     },
