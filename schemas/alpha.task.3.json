@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://alpha.local/schemas/alpha.task/3",
   "title": "alpha.task/3",
-  "description": "Task content object. Schedule lives on alpha.moment/1; optional deadline_at on the task. Links zero or more Projects via project_ids.",
+  "description": "Legacy — prefer alpha.task/4 (adds mail_thread_id + author). Schedule lives on alpha.moment/1; optional deadline_at. Links Projects via project_ids.",
   "type": "object",
   "required": ["schema", "id", "project_ids", "title", "status", "created_at"],
   "properties": {

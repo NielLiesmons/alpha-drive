@@ -1,0 +1,16 @@
+{
+  "schema": "alpha.content_type_manifest/1",
+  "id": "alpha.tasks",
+  "version": "0.1.0",
+  "title": "Tasks",
+  "description": "Tasks linked to zero or more Projects via project_ids.",
+  "entity_schema": "alpha.task/4",
+  "entity_schema_file": "schemas/alpha.task.4.json",
+  "drive_root": "tasks/",
+  "first_party": true,
+  "open": {
+    "mode": "native",
+    "native_route": "/tasks?id={id}"
+  },
+  "chat": "chat.json"
+}
