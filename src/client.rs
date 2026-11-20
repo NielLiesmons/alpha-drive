@@ -72,6 +72,17 @@ pub async fn get_path(
     root_key_hex: &str,
     logical_path: &str,
 ) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+    let (bytes, _) = get_path_with_key(base, token, root_key_hex, logical_path).await?;
+    Ok(bytes)
+}
+
+/// Like `get_path`, but also returns the entry's wrapped file-key hex (for media chunks).
+pub async fn get_path_with_key(
+    base: &str,
+    token: &str,
+    root_key_hex: &str,
+    logical_path: &str,
+) -> Result<(Vec<u8>, String), Box<dyn std::error::Error>> {
     let root = parse_root_key(root_key_hex).map_err(|e| e.to_string())?;
     let dir = load_root_dir(base, token, &root).await?;
     let name = normalize_path(logical_path);
@@ -83,9 +94,81 @@ pub async fn get_path(
     let file_key = child
         .wrapped_key
         .as_ref()
-        .ok_or("missing wrapped_key on entry")?;
-    let key_bytes = hex::decode(file_key)?;
-    Ok(decrypt_with_key(&key_bytes, &ciphertext).map_err(|e| e.to_string())?)
+        .ok_or("missing wrapped_key on entry")?
+        .clone();
+    let key_bytes = hex::decode(&file_key)?;
+    let pt = decrypt_with_key(&key_bytes, &ciphertext).map_err(|e| e.to_string())?;
+    Ok((pt, file_key))
+}
+
+/// Encrypt plaintext under a caller-supplied file key (media manifests share this key with chunks).
+pub async fn put_path_with_key(
+    base: &str,
+    token: &str,
+    root_key_hex: &str,
+    logical_path: &str,
+    kind: &str,
+    plaintext: &[u8],
+    file_key: &[u8; 32],
+) -> Result<String, Box<dyn std::error::Error>> {
+    let root = parse_root_key(root_key_hex).map_err(|e| e.to_string())?;
+    let ciphertext = encrypt_with_file_key(file_key, plaintext).map_err(|e| e.to_string())?;
+    let hash = hash_hex(&ciphertext);
+    put_block(base, token, &hash, &ciphertext).await?;
+
+    let mut dir = load_root_dir(base, token, &root).await?;
+    let name = normalize_path(logical_path);
+    if name.is_empty() {
+        return Err("empty path".into());
+    }
+    dir.schema = "alpha.dir/1".into();
+    dir.children.insert(
+        name,
+        DirChild {
+            hash: hash.clone(),
+            kind: kind.to_string(),
+            wrapped_key: Some(hex::encode(file_key)),
+        },
+    );
+    let dir_bytes = serde_json::to_vec(&dir)?;
+    let dir_ct = encrypt_with_root(&root, "", &dir_bytes).map_err(|e| e.to_string())?;
+    let dir_hash = hash_hex(&dir_ct);
+    put_block(base, token, &dir_hash, &dir_ct).await?;
+    put_tip(base, token, &dir_hash).await?;
+    Ok(hash)
+}
+
+fn encrypt_with_file_key(file_key: &[u8; 32], plaintext: &[u8]) -> Result<Vec<u8>, String> {
+    use aes_gcm::aead::{Aead, KeyInit};
+    use aes_gcm::{Aes256Gcm, Nonce};
+    use rand::RngCore;
+    let cipher = Aes256Gcm::new_from_slice(file_key).map_err(|e| e.to_string())?;
+    let mut nonce_bytes = [0u8; 12];
+    rand::thread_rng().fill_bytes(&mut nonce_bytes);
+    let ct = cipher
+        .encrypt(Nonce::from_slice(&nonce_bytes), plaintext)
+        .map_err(|_| "encrypt failed".to_string())?;
+    let mut out = Vec::with_capacity(12 + ct.len());
+    out.extend_from_slice(&nonce_bytes);
+    out.extend_from_slice(&ct);
+    Ok(out)
+}
+
+pub async fn put_block_public(
+    base: &str,
+    token: &str,
+    hash: &str,
+    body: &[u8],
+) -> Result<(), Box<dyn std::error::Error>> {
+    put_block(base, token, hash, body).await
+}
+
+pub async fn get_block_public(
+    base: &str,
+    token: &str,
+    hash: &str,
+) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+    get_block(base, token, hash).await
 }
 
 fn normalize_path(logical_path: &str) -> String {

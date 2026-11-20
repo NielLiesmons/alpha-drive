@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://alpha.local/schemas/alpha.media_blob/1",
+  "title": "alpha.media_blob/1",
+  "description": "Chunked ciphertext media for Player stream-on-play. Chunks are CAS blocks; this manifest is the dir entry leaf.",
+  "type": "object",
+  "required": ["schema", "chunk_size", "plaintext_len", "content_type", "chunks"],
+  "properties": {
+    "schema": { "const": "alpha.media_blob/1" },
+    "chunk_size": {
+      "type": "integer",
+      "minimum": 65536,
+      "description": "Target plaintext bytes per chunk (last may be shorter)"
+    },
+    "plaintext_len": { "type": "integer", "minimum": 0 },
+    "content_type": { "type": "string", "minLength": 1 },
+    "chunks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["i", "hash", "plain_len"],
+        "properties": {
+          "i": { "type": "integer", "minimum": 0 },
+          "hash": { "type": "string", "minLength": 64, "maxLength": 64 },
+          "plain_len": { "type": "integer", "minimum": 1 }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

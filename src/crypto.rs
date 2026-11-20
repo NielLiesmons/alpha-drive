@@ -90,3 +90,45 @@ pub fn decrypt_with_key(key: &[u8], ciphertext: &[u8]) -> Result<Vec<u8>, String
         .decrypt(Nonce::from_slice(nonce_bytes), ct)
         .map_err(|_| "decrypt failed".into())
 }
+
+/// Encrypt one media chunk. AAD = little-endian u32 chunk index (anti-reorder).
+pub fn encrypt_chunk(file_key: &[u8; 32], chunk_index: u32, plaintext: &[u8]) -> Result<Vec<u8>, String> {
+    use aes_gcm::aead::Payload;
+    let cipher = Aes256Gcm::new_from_slice(file_key).map_err(|e| e.to_string())?;
+    let mut nonce_bytes = [0u8; 12];
+    rand::thread_rng().fill_bytes(&mut nonce_bytes);
+    let aad = chunk_index.to_le_bytes();
+    let ct = cipher
+        .encrypt(
+            Nonce::from_slice(&nonce_bytes),
+            Payload {
+                msg: plaintext,
+                aad: &aad,
+            },
+        )
+        .map_err(|_| "encrypt chunk failed".to_string())?;
+    let mut out = Vec::with_capacity(12 + ct.len());
+    out.extend_from_slice(&nonce_bytes);
+    out.extend_from_slice(&ct);
+    Ok(out)
+}
+
+/// Decrypt one media chunk; AAD must match encrypt_chunk.
+pub fn decrypt_chunk(file_key: &[u8; 32], chunk_index: u32, ciphertext: &[u8]) -> Result<Vec<u8>, String> {
+    use aes_gcm::aead::Payload;
+    if ciphertext.len() < 12 {
+        return Err("chunk ciphertext too short".into());
+    }
+    let (nonce_bytes, ct) = ciphertext.split_at(12);
+    let cipher = Aes256Gcm::new_from_slice(file_key).map_err(|e| e.to_string())?;
+    let aad = chunk_index.to_le_bytes();
+    cipher
+        .decrypt(
+            Nonce::from_slice(nonce_bytes),
+            Payload {
+                msg: ct,
+                aad: &aad,
+            },
+        )
+        .map_err(|_| "decrypt chunk failed".into())
+}

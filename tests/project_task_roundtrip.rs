@@ -25,7 +25,7 @@ async fn project_and_task_round_trip() {
     let (url, token, _dir) = spawn_drive().await;
     let root = hex::encode(crypto::generate_root_key());
 
-    entities::init_space(&url, &token, &root, "Bley Family")
+    entities::init_space(&url, &token, &root, "Demo Space")
         .await
         .expect("init");
 
@@ -33,13 +33,13 @@ async fn project_and_task_round_trip() {
         &url,
         &token,
         &root,
-        "Ferme de Bley",
-        Some("ferme-de-bley"),
+        "Demo Space",
+        Some("demo-space"),
     )
     .await
     .expect("create project");
     assert_eq!(project.schema, "alpha.project/1");
-    assert_eq!(project.slug, "ferme-de-bley");
+    assert_eq!(project.slug, "demo-space");
     assert!(project
         .drive
         .as_ref()
@@ -54,7 +54,7 @@ async fn project_and_task_round_trip() {
     let got = entities::get_project(&url, &token, &root, &project.id)
         .await
         .expect("get project");
-    assert_eq!(got.title, "Ferme de Bley");
+    assert_eq!(got.title, "Demo Space");
 
     let task = entities::create_task(
         &url,

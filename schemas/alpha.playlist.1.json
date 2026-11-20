@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://alpha.local/schemas/alpha.playlist/1",
+  "title": "alpha.playlist/1",
+  "description": "Ordered Player playlist. Items are references, not file copies. Optional kind marks system/album playlists.",
+  "type": "object",
+  "required": ["schema", "id", "title", "items", "created_at"],
+  "properties": {
+    "schema": { "const": "alpha.playlist/1" },
+    "id": { "type": "string", "minLength": 1 },
+    "title": { "type": "string", "minLength": 1 },
+    "kind": {
+      "type": "string",
+      "enum": ["user", "favorites", "album"],
+      "description": "user = normal playlist; favorites = singleton heart list; album = ingest stub (hidden from Playlists UI)"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind", "id"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["track", "video", "podcast", "audiobook"]
+          },
+          "id": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}

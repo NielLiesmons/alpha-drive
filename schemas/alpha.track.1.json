@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://alpha.local/schemas/alpha.track/1",
+  "title": "alpha.track/1",
+  "description": "Music track metadata for Player. Points at chunked media.json; not a project folder.",
+  "type": "object",
+  "required": ["schema", "id", "title", "artists", "media_path", "created_at"],
+  "properties": {
+    "schema": { "const": "alpha.track/1" },
+    "id": { "type": "string", "minLength": 1 },
+    "title": { "type": "string", "minLength": 1 },
+    "artists": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1
+    },
+    "album": { "type": "string" },
+    "album_artist": { "type": "string" },
+    "track_no": { "type": ["integer", "null"], "minimum": 1 },
+    "disc_no": { "type": ["integer", "null"], "minimum": 1 },
+    "duration_ms": { "type": ["integer", "null"], "minimum": 0 },
+    "year": { "type": ["integer", "null"] },
+    "genres": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "media_path": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Logical path to alpha.media_blob/1 JSON"
+    },
+    "cover_path": { "type": ["string", "null"] },
+    "project_ids": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "labels": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}
