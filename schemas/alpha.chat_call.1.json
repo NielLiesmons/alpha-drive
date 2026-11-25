@@ -20,9 +20,21 @@
       "type": "string",
       "description": "Optional target peer"
     },
+    "call_id": {
+      "type": "string",
+      "description": "Stable call id; LiveKit room is call_{id}"
+    },
+    "kind": {
+      "type": "string",
+      "enum": ["audio", "video"]
+    },
+    "room": {
+      "type": "string",
+      "description": "LiveKit room name (call_{id})"
+    },
     "sdp": {
       "type": "string",
-      "description": "SDP offer/answer when action=signal"
+      "description": "SDP offer/answer when action=signal (unused when SFU handles media)"
     },
     "ice": {
       "description": "ICE candidate object or string when action=signal"
