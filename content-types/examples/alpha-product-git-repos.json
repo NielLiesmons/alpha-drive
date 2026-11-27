@@ -1,0 +1,77 @@
+{
+  "_comment": "Example alpha.git_repo/1 leaves for the Alpha product Space. Replace {apex} with the real alphamail/Space domain. Org = alpha only — not Bley, not personal namespaces. Install as git_repos/{id}/repo.json after Forgejo is up on git.{apex}.",
+  "repos": [
+    {
+      "schema": "alpha.git_repo/1",
+      "id": "alpha-drive",
+      "title": "alpha-drive",
+      "remote_url": "https://git.{apex}/alpha/alpha-drive.git",
+      "web_url": "https://git.{apex}/alpha/alpha-drive",
+      "default_branch": "main",
+      "forge": "alpha",
+      "org": "alpha",
+      "name": "alpha-drive",
+      "created_at": "2026-11-09T00:00:00Z"
+    },
+    {
+      "schema": "alpha.git_repo/1",
+      "id": "alpha-team",
+      "title": "alpha-team",
+      "remote_url": "https://git.{apex}/alpha/alpha-team.git",
+      "web_url": "https://git.{apex}/alpha/alpha-team",
+      "default_branch": "main",
+      "forge": "alpha",
+      "org": "alpha",
+      "name": "alpha-team",
+      "created_at": "2026-11-09T00:00:00Z"
+    },
+    {
+      "schema": "alpha.git_repo/1",
+      "id": "alpha-docs",
+      "title": "alpha-docs",
+      "remote_url": "https://git.{apex}/alpha/alpha-docs.git",
+      "web_url": "https://git.{apex}/alpha/alpha-docs",
+      "default_branch": "main",
+      "forge": "alpha",
+      "org": "alpha",
+      "name": "alpha-docs",
+      "created_at": "2026-11-09T00:00:00Z"
+    },
+    {
+      "schema": "alpha.git_repo/1",
+      "id": "alphamail",
+      "title": "alphamail",
+      "remote_url": "https://git.{apex}/alpha/alphamail.git",
+      "web_url": "https://git.{apex}/alpha/alphamail",
+      "default_branch": "main",
+      "forge": "alpha",
+      "org": "alpha",
+      "name": "alphamail",
+      "created_at": "2026-11-09T00:00:00Z"
+    },
+    {
+      "schema": "alpha.git_repo/1",
+      "id": "alpha-ui",
+      "title": "alpha-ui",
+      "remote_url": "https://git.{apex}/alpha/alpha-ui.git",
+      "web_url": "https://git.{apex}/alpha/alpha-ui",
+      "default_branch": "main",
+      "forge": "alpha",
+      "org": "alpha",
+      "name": "alpha-ui",
+      "created_at": "2026-11-09T00:00:00Z"
+    },
+    {
+      "schema": "alpha.git_repo/1",
+      "id": "alpha-api",
+      "title": "alpha-api",
+      "remote_url": "https://git.{apex}/alpha/alpha-api.git",
+      "web_url": "https://git.{apex}/alpha/alpha-api",
+      "default_branch": "main",
+      "forge": "alpha",
+      "org": "alpha",
+      "name": "alpha-api",
+      "created_at": "2026-11-09T00:00:00Z"
+    }
+  ]
+}
