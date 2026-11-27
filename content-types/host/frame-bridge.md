@@ -40,4 +40,4 @@ Do not spam `info` on every keystroke; aggregate like webxdc.
 ## Install path
 
 Third-party packages: `meta/content_types/{package_id}/` on the Space Drive  
-(`manifest.json`, `chat.json`, optional `app/index.html`). See `install.js` in Admin.
+(`manifest.json`, `chat.json`, optional `app/index.html`). See `install.js` in Team (`alpha-team`).

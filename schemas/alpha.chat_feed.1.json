@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://alpha.local/schemas/alpha.chat_feed/1",
   "title": "alpha.chat_feed/1",
-  "description": "Recent chat message ids for the Admin Chat timeline (newest first). Disposable index — leaves are SoT.",
+  "description": "Recent chat message ids for the Team Chat timeline (newest first). Disposable index — leaves are SoT.",
   "type": "object",
   "required": ["schema", "ids"],
   "properties": {
