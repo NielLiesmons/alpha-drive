@@ -1,6 +1,6 @@
 # Alpha Drive
 
-Encrypted ciphertext store for Alpha Spaces. **Server stores ciphertext only**; Space root capability stays on devices.
+Encrypted ciphertext store for Alpha Spaces. Cryptree model based on the [Peergos](https://peergos.org/) cryptree (Wuala paper + Peergos caps): **server stores ciphertext only**; Space root capability stays on devices.
 
 Alpha = private Drive + Mail + Chat on your domain — open protocols, self-hostable where it matters.
 
